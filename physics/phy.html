@@ -206,9 +206,12 @@
   .rev-item-label { font-size: 10px; color: var(--muted); text-align: center; }
   .rev-date-display { font-size: 11px; color: var(--muted); margin-top: 6px; }
 
-  /* ===================== MOBILE LAYOUT ===================== */
+  .dark-mode .dpp-edit-row { background: linear-gradient(90deg, rgba(60,90,75,0.35), rgba(27,31,51,0.85)); }
+  .dark-mode .qp-section-card { background: linear-gradient(180deg, #20243c, var(--card)); }
+
   @media (max-width: 640px) {
     .topbar {
+      position: static;
       padding: 10px 12px;
       gap: 10px;
       flex-wrap: wrap;
