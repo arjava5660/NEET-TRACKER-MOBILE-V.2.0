@@ -71,6 +71,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .dark-mode .header-btn:hover { background: #f2f2f2; color: #1a5fa8; }
 .dark-mode .header-btn.danger { color: #ff8c8c; border-color: rgba(255,140,140,0.45); }
 .dark-mode .header-btn.danger:hover { background: #4c2c2c; }
+.dark-mode .rev-overdue { background: #3a2222; border-color: #e6544166; }
+.dark-mode .rev-overdue .rev-day { background: #522a26; color: #ff8c7a; }
 
 .main { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
 .section { margin-bottom: 28px; }
@@ -97,6 +99,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
 .rev-check:hover { border-color: var(--orange); background: #fff0e0; }
 .rev-check.done { background: var(--orange); border-color: var(--orange); }
 .rev-empty { text-align: center; padding: 20px; color: var(--hint); font-size: 13px; }
+.rev-overdue { border-color: #e6544155; background: #fff5f4; }
+.rev-overdue .rev-day { background: #ffe1de; color: #c73a2b; }
+.rev-complete-btn { border: none; background: #e65441; color: #fff; font-size: 11.5px; font-weight: 600; padding: 7px 12px; border-radius: 7px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.rev-complete-btn:hover { background: #c73a2b; }
 
 .task-list { display: flex; flex-direction: column; gap: 8px; }
 .task-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
@@ -233,11 +239,12 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
   .weak-control-button, .weak-clear-button { flex: 1 1 auto; padding: 8px 10px; font-size: 12px; }
 
   .rev-list, .task-list { gap: 6px; }
-  .rev-item { padding: 10px 10px; gap: 8px; }
+  .rev-item { padding: 10px 10px; gap: 8px; flex-wrap: wrap; }
   .rev-day { font-size: 10px; padding: 2px 6px; }
   .rev-chapter { font-size: 12.5px; }
   .rev-subject { font-size: 10.5px; }
   .rev-check { width: 20px; height: 20px; }
+  .rev-complete-btn { font-size: 11px; padding: 6px 10px; }
 
   .task-item { padding: 8px 10px; }
   .task-check { width: 18px; height: 18px; }
@@ -298,6 +305,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); co
       <button class="header-btn" onclick="toggleDarkMode()">🌙 Dark</button>
       <button class="header-btn" onclick="openSettings()">⚙️ Settings</button>
       <button class="header-btn" onclick="backupData()">💾 Backup</button>
+      <button class="header-btn" onclick="document.getElementById('restore-file-input').click()">📤 Restore</button>
+      <input type="file" id="restore-file-input" accept="application/json,.json" style="display:none" onchange="restoreData(event)">
       <button class="header-btn danger" onclick="resetAll()">🗑️ Reset All</button>
     </div>
   </div>
@@ -553,12 +562,16 @@ function getTodayRevisions() {
       if (!compDate) return;
       REV_DAYS.forEach(day => {
         const targetDate = addDays(compDate, day);
-        if (targetDate === TODAY) {
-          revs.push({ subjectKey: s.key, subjectName: s.name, chIndex: ci, chName: ch, day, done: data[`ch${ci}_rev_d${day}`] });
+        const done = data[`ch${ci}_rev_d${day}`];
+        // Show revisions due today, plus any earlier ones that are still not done (carried forward).
+        if (targetDate === TODAY || (targetDate < TODAY && !done)) {
+          revs.push({ subjectKey: s.key, subjectName: s.name, chIndex: ci, chName: ch, day, done, overdue: targetDate < TODAY, targetDate });
         }
       });
     });
   });
+  // Overdue (carried-forward) revisions first, then today's, oldest first.
+  revs.sort((a, b) => a.targetDate.localeCompare(b.targetDate));
   return revs;
 }
 
@@ -581,12 +594,13 @@ function renderRevisions() {
     return;
   }
   list.innerHTML = revs.map(r => `
-    <div class="rev-item">
-      <div class="rev-day">Day ${r.day}</div>
+    <div class="rev-item${r.overdue ? ' rev-overdue' : ''}">
+      <div class="rev-day">Day ${r.day}${r.overdue ? ' · Missed' : ''}</div>
       <div class="rev-info">
         <div class="rev-chapter">${r.chName}</div>
         <div class="rev-subject">${r.subjectName}</div>
       </div>
+      ${r.overdue ? `<button class="rev-complete-btn" onclick="toggleRevision('${r.subjectKey}', ${r.chIndex}, ${r.day})">✓ Mark Complete</button>` : ''}
       <div class="rev-check ${r.done ? 'done' : ''}" onclick="toggleRevision('${r.subjectKey}', ${r.chIndex}, ${r.day})">
         ${r.done ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
       </div>

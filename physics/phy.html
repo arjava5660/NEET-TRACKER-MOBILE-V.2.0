@@ -388,11 +388,9 @@ function getDppLabels(chIndex, dppCount) {
   return Array.from({ length: dppCount }, (_, i) => `DPP ${i + 1}`);
 }
 
+const QP_LEGACY_KEYS = ["qp_lang", "qp_rapid", "qp_kpp", "qp_pyq"];
 const QUESTION_PAPER_SECTIONS = [
-  { key: "qp_lang", label: "Kpp lanuguage question", defaultCount: 2 },
-  { key: "qp_rapid", label: "Rapid firee Kpp", defaultCount: 2 },
-  { key: "qp_kpp", label: "KPP", defaultCount: 2 },
-  { key: "qp_pyq", label: "PYQ KPP", defaultCount: 2 }
+  { key: "qp_kpp", label: "KPP", defaultCount: 2, legacyKeys: QP_LEGACY_KEYS }
 ];
 
 function getChapterQuestionPaperCount(chIndex, key) {
@@ -402,6 +400,15 @@ function getChapterQuestionPaperCount(chIndex, key) {
   if (typeof stored === 'number') return stored;
   if (typeof stored === 'string' && stored !== '') return Number(stored);
   const section = QUESTION_PAPER_SECTIONS.find(item => item.key === key);
+  if (section && section.legacyKeys) {
+    const legacyCounts = section.legacyKeys.map(k => {
+      const lStored = data[`ch${chIndex}_${k}_count`];
+      if (typeof lStored === 'number') return lStored;
+      if (typeof lStored === 'string' && lStored !== '') return Number(lStored);
+      return section.defaultCount;
+    });
+    return Math.max(...legacyCounts);
+  }
   return section ? section.defaultCount : 2;
 }
 
@@ -509,7 +516,10 @@ function render() {
     QUESTION_PAPER_SECTIONS.forEach(section => {
       const qpCount = getChapterQuestionPaperCount(ci, section.key);
       chTotal += qpCount;
-      for (let i = 0; i < qpCount; i++) { if (data[gk(ci, section.key, i)]) chDone++; }
+      for (let i = 0; i < qpCount; i++) {
+        const done = section.legacyKeys ? section.legacyKeys.some(k => data[gk(ci, k, i)]) : data[gk(ci, section.key, i)];
+        if (done) chDone++;
+      }
     });
     if (data[gk(ci, "kneet", 0)]) chDone++;
     if (data[gk(ci, "kneet", 1)]) chDone++;
@@ -565,8 +575,8 @@ function render() {
     const extraQpHtml = QUESTION_PAPER_SECTIONS.map(section => {
       const qpCount = getChapterQuestionPaperCount(ci, section.key);
       const boxes = Array.from({ length: qpCount }, (_, i) => {
-        const done = data[gk(ci, section.key, i)];
-        return '<div class="check-item"><div class="check-box' + (done ? ' done-qp' : '') + '" id="chk-qp-' + ci + '-' + section.key + '-' + i + '" onclick="toggle(' + ci + ',\'' + section.key + '\',' + i + ')" title="' + section.label + ' ' + (i + 1) + '"><svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="check-label">' + (i + 1) + '</span></div>';
+        const done = section.legacyKeys ? section.legacyKeys.some(k => data[gk(ci, k, i)]) : data[gk(ci, section.key, i)];
+        return '<div class="check-item"><div class="check-box' + (done ? ' done-qp' : '') + '" id="chk-qp-' + ci + '-' + section.key + '-' + i + '" onclick="toggleQp(' + ci + ',\'' + section.key + '\',' + i + ')" title="' + section.label + ' ' + (i + 1) + '"><svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="check-label">' + (i + 1) + '</span></div>';
       }).join("");
       return '<div class="qp-section-card"><div class="qp-section-head"><div><div class="qp-section-title">' + section.label + '</div><div class="qp-section-sub">' + qpCount + ' papers</div></div><div class="qp-edit-controls"><input type="number" class="qp-edit-input" id="qp-count-' + ci + '-' + section.key + '" value="' + qpCount + '" min="1" max="20"><button class="qp-edit-btn" onclick="saveChapterQuestionPaperCount(' + ci + ',\'' + section.key + '\')">Edit</button></div></div><div class="check-grid">' + boxes + '</div></div>';
     }).join("");
@@ -602,6 +612,25 @@ function toggle(ci, type, idx) {
   const data = load();
   const key = gk(ci, type, idx);
   data[key] = !data[key];
+  if (isDropdown1Complete(ci, data) && !data[compKey(ci)]) {
+    data[compKey(ci)] = today();
+  }
+  save(data);
+  updateCard(ci, data);
+  updateOverall(data);
+}
+
+function toggleQp(ci, key, idx) {
+  const section = QUESTION_PAPER_SECTIONS.find(item => item.key === key);
+  const data = load();
+  if (section && section.legacyKeys) {
+    const current = section.legacyKeys.some(k => data[gk(ci, k, idx)]);
+    const next = !current;
+    section.legacyKeys.forEach(k => { data[gk(ci, k, idx)] = next; });
+  } else {
+    const dkey = gk(ci, key, idx);
+    data[dkey] = !data[dkey];
+  }
   if (isDropdown1Complete(ci, data) && !data[compKey(ci)]) {
     data[compKey(ci)] = today();
   }
@@ -672,16 +701,18 @@ function updateCard(ci, data) {
   const typeMap = [
     ...Array.from({ length: lc }, (_, i) => ({ type: "lec", i, cls: "done-lec", el: `chk-lec-${ci}-${i}` })),
     ...Array.from({ length: dppCount }, (_, i) => ({ type: "dpp", i, cls: "done-dpp", el: `chk-dpp-${ci}-${i}` })),
-    ...QUESTION_PAPER_SECTIONS.flatMap(section => Array.from({ length: getChapterQuestionPaperCount(ci, section.key) }, (_, i) => ({ type: section.key, i, cls: "done-qp", el: `chk-qp-${ci}-${section.key}-${i}` }))),
+    ...QUESTION_PAPER_SECTIONS.flatMap(section => Array.from({ length: getChapterQuestionPaperCount(ci, section.key) }, (_, i) => ({ type: section.key, i, cls: "done-qp", el: `chk-qp-${ci}-${section.key}-${i}`, keys: section.legacyKeys }))),
     { type: "kneet", i: 0, cls: "done-kneet", el: `chk-kneet-${ci}-0` },
     { type: "kneet", i: 1, cls: "done-kneet", el: `chk-kneet-${ci}-1` },
     { type: "pyqneet", i: 0, cls: "done-pyq-neet", el: `chk-pyqneet-${ci}` },
     { type: "pyqjee", i: 0, cls: "done-pyq-jee", el: `chk-pyqjee-${ci}` },
     { type: "ncert", i: 0, cls: "done-ncert", el: `chk-ncert-${ci}` },
   ];
-  typeMap.forEach(({ type, i, cls, el }) => {
+  typeMap.forEach(({ type, i, cls, el, keys }) => {
     const box = document.getElementById(el);
-    if (box) { data[gk(ci, type, i)] ? box.classList.add(cls) : box.classList.remove(cls); }
+    if (!box) return;
+    const done = keys ? keys.some(k => data[gk(ci, k, i)]) : data[gk(ci, type, i)];
+    done ? box.classList.add(cls) : box.classList.remove(cls);
   });
 
   const card = document.getElementById(`card-${ci}`);
