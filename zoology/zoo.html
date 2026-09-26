@@ -327,7 +327,6 @@
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#e8f0fb;border:1px solid #a8c4f0"></div> Lecture</div>
   <div class="legend-item"><div class="legend-dot" style="background:#e6f4ea;border:1px solid #90d09e"></div> DPP</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#f1eaff;border:1px solid #c4a0f0"></div> Kattar NEET</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fef3e0;border:1px solid #f5c842"></div> PYQ NEET</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fdeaea;border:1px solid #f0a0a0"></div> </div>
   <div class="legend-item"><div class="legend-dot" style="background:#e0f5f5;border:1px solid #80d0d0"></div> NCERT</div>
@@ -444,10 +443,10 @@ function isDropdown1Complete(ci, data) {
     if (!data[gk(ci,"lec",i)]) return false;
     if (!data[gk(ci,"dpp",i)]) return false;
   }
-  if (!data[gk(ci,"kneet",0)]) return false;
-  if (!data[gk(ci,"kneet",1)]) return false;
   if (!data[gk(ci,"pyqneet",0)]) return false;
   if (!data[gk(ci,"pyqjee",0)]) return false;
+  if (!data[gk(ci,"replica",0)]) return false;
+  if (!data[gk(ci,"practice",0)]) return false;
   return true;
 }
 
@@ -481,14 +480,14 @@ function render() {
       save(data);
     }
 
-    let chTotal = lc + dppCount + 2 + 2;
+    let chTotal = lc + dppCount + 4;
     let chDone = 0;
     for (let i = 0; i < lc; i++) { if (data[gk(ci,"lec",i)]) chDone++; }
     for (let i = 0; i < lc; i++) { if (data[gk(ci,"dpp",i)]) chDone++; }
-    if (data[gk(ci,"kneet",0)]) chDone++;
-    if (data[gk(ci,"kneet",1)]) chDone++;
     if (data[gk(ci,"pyqneet",0)]) chDone++;
     if (data[gk(ci,"pyqjee",0)]) chDone++;
+    if (data[gk(ci,"replica",0)]) chDone++;
+    if (data[gk(ci,"practice",0)]) chDone++;
     chTotal += 2;
     if (data[gk(ci,"ncert",0)]) chDone++;
     if (data[gk(ci,"neetflex",0)]) chDone++;
@@ -502,9 +501,10 @@ function render() {
     const lecDone  = Array.from({length:lc}, (_,i) => data[gk(ci,"lec",i)]).filter(Boolean).length;
     const dppDone  = Array.from({length:dppCount}, (_,i) => data[gk(ci,"dpp",i)]).filter(Boolean).length;
     const dppLabels = getDppLabels(ci, dppCount);
-    const knDone   = [0,1].filter(i => data[gk(ci,"kneet",i)]).length;
     const pyqND    = data[gk(ci,"pyqneet",0)] ? 1 : 0;
     const pyqJD    = data[gk(ci,"pyqjee",0)]  ? 1 : 0;
+    const replicaDone = data[gk(ci,"replica",0)] ? 1 : 0;
+    const practiceDone = data[gk(ci,"practice",0)] ? 1 : 0;
 
     const revBoxesHTML = REV_DAYS.map(day => {
       const targetDate = compDate ? addDays(compDate, day) : null;
@@ -538,7 +538,7 @@ function render() {
         <div class="ch-mini-stats">
           <span class="mini-pill pill-lec" id="pill-lec-${ci}">Lec ${lecDone}/${lc}</span>
           <span class="mini-pill pill-dpp" id="pill-dpp-${ci}">DPP ${dppDone}/${lc}</span>
-          <span class="mini-pill pill-kneet" id="pill-kn-${ci}">KN ${knDone}/2</span>
+          <span class="mini-pill pill-kneet" id="pill-sheets-${ci}">PYQ ${replicaDone}/1 · KNS ${practiceDone}/1</span>
           <span class="mini-pill pill-pyq" id="pill-pyq-${ci}">N ${pyqND} · J ${pyqJD}</span>
         </div>
         <span class="chevron" id="chev-${ci}">▼</span>
@@ -585,19 +585,22 @@ function render() {
           </div>
         </div>
 
-        <!-- KATTAR NEET -->
+        <!-- ADDITIONAL SHEETS -->
         <div class="section-block">
-          <div class="section-label">🎯 Kattar NEET <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--hint)">(2 rounds)</span></div>
+          <div class="section-label">🎯 Additional Sheets</div>
           <div class="check-grid">
-            ${[0,1].map(i => {
-              const done = data[gk(ci,"kneet",i)];
-              return `<div class="check-item">
-                <div class="check-box ${done?"done-kneet":""}" id="chk-kneet-${ci}-${i}" onclick="toggle(${ci},'kneet',${i})" title="Kattar NEET Round ${i+1}">
-                  <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
-                <span class="check-label">KN ${i+1}</span>
-              </div>`;
-            }).join("")}
+            <div class="check-item">
+              <div class="check-box ${data[gk(ci,"replica",0)]?"done-kneet":""}" id="chk-replica-${ci}" onclick="toggle(${ci},'replica',0)" title="PYQ Sheet">
+                <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <span class="check-label">PYQ Sheet</span>
+            </div>
+            <div class="check-item">
+              <div class="check-box ${data[gk(ci,"practice",0)]?"done-kneet":""}" id="chk-practice-${ci}" onclick="toggle(${ci},'practice',0)" title="Katter NEET Sheet">
+                <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <span class="check-label">Katter NEET Sheet</span>
+            </div>
           </div>
         </div>
 
@@ -706,8 +709,8 @@ function updateCard(ci, data) {
   const typeMap = [
     ...Array.from({length:lc}, (_,i) => ({type:"lec",i,cls:"done-lec",el:`chk-lec-${ci}-${i}`})),
     ...Array.from({length:dppCount}, (_,i) => ({type:"dpp",i,cls:"done-dpp",el:`chk-dpp-${ci}-${i}`})),
-    {type:"kneet",i:0,cls:"done-kneet",el:`chk-kneet-${ci}-0`},
-    {type:"kneet",i:1,cls:"done-kneet",el:`chk-kneet-${ci}-1`},
+    {type:"replica",i:0,cls:"done-kneet",el:`chk-replica-${ci}`},
+    {type:"practice",i:0,cls:"done-kneet",el:`chk-practice-${ci}`},
     {type:"pyqneet",i:0,cls:"done-pyq-neet",el:`chk-pyqneet-${ci}`},
     {type:"pyqjee",i:0,cls:"done-pyq-jee",el:`chk-pyqjee-${ci}`},
     {type:"ncert",i:0,cls:"done-ncert",el:`chk-ncert-${ci}`},
@@ -723,13 +726,14 @@ function updateCard(ci, data) {
 
   const lecDone = Array.from({length:lc}, (_,i) => data[gk(ci,"lec",i)]).filter(Boolean).length;
   const dppDone = Array.from({length:dppCount}, (_,i) => data[gk(ci,"dpp",i)]).filter(Boolean).length;
-  const knDone  = [0,1].filter(i => data[gk(ci,"kneet",i)]).length;
+  const replicaDone = data[gk(ci,"replica",0)] ? 1 : 0;
+  const practiceDone = data[gk(ci,"practice",0)] ? 1 : 0;
   const pyqND   = data[gk(ci,"pyqneet",0)] ? 1 : 0;
   const pyqJD   = data[gk(ci,"pyqjee",0)]  ? 1 : 0;
   const p = (id, t) => { const el = document.getElementById(id); if(el) el.textContent = t; };
   p(`pill-lec-${ci}`, `Lec ${lecDone}/${lc}`);
   p(`pill-dpp-${ci}`, `DPP ${dppDone}/${lc}`);
-  p(`pill-kn-${ci}`,  `KN ${knDone}/2`);
+  p(`pill-sheets-${ci}`, `PYQ ${replicaDone}/1 · KNS ${practiceDone}/1`);
   p(`pill-pyq-${ci}`, `N ${pyqND} · J ${pyqJD}`);
 
   const sub = document.getElementById(`planner-sub-${ci}`);
@@ -757,8 +761,8 @@ function updateCard(ci, data) {
     }).join("");
   }
 
-  let chTotal = lc + dppCount + 2 + 2 + 2 + REV_DAYS.length;
-  let chDone = lecDone + dppDone + knDone + pyqND + pyqJD;
+  let chTotal = lc + dppCount + 4 + 2 + REV_DAYS.length;
+  let chDone = lecDone + dppDone + replicaDone + practiceDone + pyqND + pyqJD;
   if (data[gk(ci,"ncert",0)]) chDone++;
   if (data[gk(ci,"neetflex",0)]) chDone++;
   REV_DAYS.forEach(d => { if (data[revKey(ci,d)]) chDone++; });
@@ -772,12 +776,12 @@ function updateOverall(data) {
   CHAPTERS.forEach((ch, ci) => {
     const lc = getChapterLecCount(ci);
     const dppCount = getChapterDppCount(ci);
-    let chTotal = lc + dppCount + 2 + 2 + 2 + REV_DAYS.length;
+    let chTotal = lc + dppCount + 4 + 2 + REV_DAYS.length;
     let chDone = 0;
     for (let i = 0; i < lc; i++) { if (data[gk(ci,"lec",i)]) chDone++; }
     for (let i = 0; i < dppCount; i++) { if (data[gk(ci,"dpp",i)]) chDone++; }
-    if (data[gk(ci,"kneet",0)]) chDone++;
-    if (data[gk(ci,"kneet",1)]) chDone++;
+    if (data[gk(ci,"replica",0)]) chDone++;
+    if (data[gk(ci,"practice",0)]) chDone++;
     if (data[gk(ci,"pyqneet",0)]) chDone++;
     if (data[gk(ci,"pyqjee",0)]) chDone++;
     if (data[gk(ci,"ncert",0)]) chDone++;

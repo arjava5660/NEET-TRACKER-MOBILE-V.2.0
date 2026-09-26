@@ -326,7 +326,7 @@
 <div class="legend">
   <div class="legend-item"><div class="legend-dot" style="background:#e8f0fb;border:1px solid #a8c4f0"></div> Lecture</div>
   <div class="legend-item"><div class="legend-dot" style="background:#e6f4ea;border:1px solid #90d09e"></div> DPP</div>
-  <div class="legend-item"><div class="legend-dot" style="background:#f1eaff;border:1px solid #c4a0f0"></div> Kattar NEET</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f1eaff;border:1px solid #c4a0f0"></div> Vipu Sheet</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fef3e0;border:1px solid #f5c842"></div> PYQ NEET</div>
   <div class="legend-item"><div class="legend-dot" style="background:#fdeaea;border:1px solid #f0a0a0"></div> </div>
   <div class="legend-item"><div class="legend-dot" style="background:#e0f5f5;border:1px solid #80d0d0"></div> NCERT</div>
@@ -543,7 +543,7 @@ function render() {
         <div class="ch-mini-stats">
           <span class="mini-pill pill-lec" id="pill-lec-${ci}">Lec ${lecDone}/${lc}</span>
           <span class="mini-pill pill-dpp" id="pill-dpp-${ci}">DPP ${dppDone}/${lc}</span>
-          <span class="mini-pill pill-kneet" id="pill-kn-${ci}">KN ${knDone}/1 · RP ${replicaDone}/1 · PS ${practiceDone}/1</span>
+          <span class="mini-pill pill-kneet" id="pill-kn-${ci}">Vipu ${knDone}/1 · PYQ ${replicaDone}/1 · KNS ${practiceDone}/1</span>
           <span class="mini-pill pill-pyq" id="pill-pyq-${ci}">N ${pyqND} · J ${pyqJD}</span>
         </div>
         <span class="chevron" id="chev-${ci}">▼</span>
@@ -590,27 +590,27 @@ function render() {
           </div>
         </div>
 
-        <!-- KATTAR NEET -->
+        <!-- VIPU SHEET -->
         <div class="section-block">
-          <div class="section-label">🎯 Kattar NEET</div>
+          <div class="section-label">🎯 Vipu Sheet</div>
           <div class="check-grid">
             <div class="check-item">
-              <div class="check-box ${data[gk(ci,"kneet",0)]?"done-kneet":""}" id="chk-kneet-${ci}-0" onclick="toggle(${ci},'kneet',0)" title="Kattar NEET">
+              <div class="check-box ${data[gk(ci,"kneet",0)]?"done-kneet":""}" id="chk-kneet-${ci}-0" onclick="toggle(${ci},'kneet',0)" title="Vipu Sheet">
                 <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              <span class="check-label">Kattar NEET</span>
+              <span class="check-label">Vipu Sheet</span>
             </div>
             <div class="check-item">
-              <div class="check-box ${data[gk(ci,"replica",0)]?"done-kneet":""}" id="chk-replica-${ci}" onclick="toggle(${ci},'replica',0)" title="Replica Practica Sheet">
+              <div class="check-box ${data[gk(ci,"replica",0)]?"done-kneet":""}" id="chk-replica-${ci}" onclick="toggle(${ci},'replica',0)" title="PYQ Sheet">
                 <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              <span class="check-label">Replica Practica Sheet</span>
+              <span class="check-label">PYQ Sheet</span>
             </div>
             <div class="check-item">
-              <div class="check-box ${data[gk(ci,"practice",0)]?"done-kneet":""}" id="chk-practice-${ci}" onclick="toggle(${ci},'practice',0)" title="Practice Sheet">
+              <div class="check-box ${data[gk(ci,"practice",0)]?"done-kneet":""}" id="chk-practice-${ci}" onclick="toggle(${ci},'practice',0)" title="Katter NEET Sheet">
                 <svg class="tick" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="#5b2d8e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
-              <span class="check-label">Practice Sheet</span>
+              <span class="check-label">Katter NEET Sheet</span>
             </div>
           </div>
         </div>
@@ -746,7 +746,7 @@ function updateCard(ci, data) {
   const p = (id, t) => { const el = document.getElementById(id); if(el) el.textContent = t; };
   p(`pill-lec-${ci}`, `Lec ${lecDone}/${lc}`);
   p(`pill-dpp-${ci}`, `DPP ${dppDone}/${lc}`);
-  p(`pill-kn-${ci}`,  `KN ${knDone}/1 · RP ${replicaDone}/1 · PS ${practiceDone}/1`);
+  p(`pill-kn-${ci}`,  `Vipu ${knDone}/1 · PYQ ${replicaDone}/1 · KNS ${practiceDone}/1`);
   p(`pill-pyq-${ci}`, `N ${pyqND} · J ${pyqJD}`);
 
   const sub = document.getElementById(`planner-sub-${ci}`);
