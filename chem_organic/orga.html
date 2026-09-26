@@ -201,6 +201,8 @@
   .rev-date-label { font-size: 9px; color: var(--muted); }
   .rev-item-label { font-size: 10px; color: var(--muted); text-align: center; }
   .rev-date-display { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .rev-start-control { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; color: var(--muted); cursor: pointer; }
+    .rev-start-control input { width: 16px; height: 16px; accent-color: var(--orange); cursor: pointer; }
   .rev-completed-date { font-size: 11px; color: var(--green); font-weight: 500; margin-top: 2px; }
 
   /* ── NOTES ── */
@@ -393,7 +395,13 @@ function restoreExpandedChapter() {
 function gk(ci, type, idx) { return `ch${ci}_${type}_${idx}`; }
 function noteKey(ci) { return `ch${ci}_note`; }
 function compKey(ci) { return `ch${ci}_completedDate`; }
+function revisionStartKey(ci) { return `ch${ci}_revisionStartDate`; }
 function revKey(ci, day) { return `ch${ci}_rev_d${day}`; }
+
+function revisionStatusHTML(ci, revisionDate) {
+  if (revisionDate) return '<div class="rev-date-display">Revision started on <strong>' + formatDate(revisionDate) + '</strong></div>';
+  return '<label class="rev-start-control"><input type="checkbox" onchange="startRevision(' + ci + ')"> Start revision today</label>';
+}
 
 // Check if dropdown-1 is fully done (lec + dpp + kneet + pyqneet + pyqjee)
 function isDropdown1Complete(ci, data) {
@@ -437,6 +445,7 @@ function render() {
       compDate = data[compKey(ci)];
       save(data);
     }
+    const revisionDate = data[revisionStartKey(ci)] || compDate;
 
     // Count progress (dropdown1 boxes only for "complete" detection, all for overall)
     let chTotal = lc + lc + 2 + 2; // lec + dpp + kneet + pyq
@@ -465,9 +474,9 @@ function render() {
 
     /* ── REVISION BOXES ── */
     const revBoxesHTML = REV_DAYS.map(day => {
-      const targetDate = compDate ? addDays(compDate, day) : null;
+      const targetDate = revisionDate ? addDays(revisionDate, day) : null;
       const done = data[revKey(ci, day)];
-      const locked = !compDate;
+      const locked = !revisionDate;
       return `<div class="rev-item">
         <div class="rev-box ${done ? "done-rev" : ""} ${locked ? "rev-locked-box" : ""}"
           onclick="${locked ? "" : `toggleRev(${ci},${day})`}"
@@ -579,7 +588,7 @@ function render() {
         <div class="planner-head" onclick="togglePlanner(${ci})">
           <span style="font-size:15px">📋</span>
           <span class="planner-label">Study Planner — NCERT & Revision</span>
-          <span class="planner-sub" id="planner-sub-${ci}">${compDate ? "Started "+formatDate(compDate) : "Unlocks when Chapter 1 is complete"}</span>
+          <span class="planner-sub" id="planner-sub-${ci}">${revisionDate ? "Started "+formatDate(revisionDate) : "Start revision when ready"}</span>
           <span class="chevron" id="pchev-${ci}">▼</span>
         </div>
 
@@ -605,10 +614,7 @@ function render() {
                 — Day 1, 3, 5, 8, 15, 30, 50 after completion
               </span>
             </div>
-            ${!compDate
-              ? `<div class="rev-locked">🔒 Complete all items in dropdown 1 to unlock revision schedule</div>`
-              : `<div class="rev-date-display">Chapter completed on <strong>${formatDate(compDate)}</strong></div>`
-            }
+            <div id="rev-status-${ci}">${revisionStatusHTML(ci, revisionDate)}</div>
             <div class="rev-grid" style="margin-top:10px" id="rev-grid-${ci}">
               ${revBoxesHTML}
             </div>
@@ -642,6 +648,14 @@ function toggle(ci, type, idx) {
   updateOverall(data);
 }
 
+function startRevision(ci) {
+  const data = load();
+  const key = revisionStartKey(ci);
+  if (!data[key] && !data[compKey(ci)]) data[key] = today();
+  save(data);
+  updateCard(ci, data);
+}
+
 function toggleRev(ci, day) {
   const data = load();
   const key = revKey(ci, day);
@@ -655,7 +669,7 @@ function toggleRev(ci, day) {
 function updateCard(ci, data) {
   const lc = getChapterLecCount(ci);
   const completed1 = isDropdown1Complete(ci, data);
-  const compDate = data[compKey(ci)];
+  const revisionDate = data[revisionStartKey(ci)] || data[compKey(ci)];
 
   // update checkbox visuals
   const typeMap = [
@@ -690,15 +704,18 @@ function updateCard(ci, data) {
 
   // planner sub-label
   const sub = document.getElementById(`planner-sub-${ci}`);
-  if (sub) sub.textContent = compDate ? "Started " + formatDate(compDate) : "Unlocks when Chapter 1 is complete";
+  if (sub) sub.textContent = revisionDate ? "Started " + formatDate(revisionDate) : "Start revision when ready";
+
+  const revStatus = document.getElementById(`rev-status-${ci}`);
+  if (revStatus) revStatus.innerHTML = revisionStatusHTML(ci, revisionDate);
 
   // rebuild revision grid
   const revGrid = document.getElementById(`rev-grid-${ci}`);
   if (revGrid) {
     revGrid.innerHTML = REV_DAYS.map(day => {
-      const targetDate = compDate ? addDays(compDate, day) : null;
+      const targetDate = revisionDate ? addDays(revisionDate, day) : null;
       const done = data[revKey(ci, day)];
-      const locked = !compDate;
+      const locked = !revisionDate;
       return `<div class="rev-item">
         <div class="rev-box ${done?"done-rev":""} ${locked?"rev-locked-box":""}"
           onclick="${locked?"":"toggleRev("+ci+","+day+")"}"

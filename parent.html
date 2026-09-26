@@ -558,10 +558,10 @@ function getTodayRevisions() {
     const data = getSubjectData(s.key);
     const chapters = CHAPTER_DEFS[s.key] || [];
     chapters.forEach((ch, ci) => {
-      const compDate = data[`ch${ci}_completedDate`];
-      if (!compDate) return;
+      const revisionDate = data[`ch${ci}_revisionStartDate`] || data[`ch${ci}_completedDate`];
+      if (!revisionDate) return;
       REV_DAYS.forEach(day => {
-        const targetDate = addDays(compDate, day);
+        const targetDate = addDays(revisionDate, day);
         const done = data[`ch${ci}_rev_d${day}`];
         // Show revisions due today, plus any earlier ones that are still not done (carried forward).
         if (targetDate === TODAY || (targetDate < TODAY && !done)) {
@@ -641,10 +641,10 @@ function getUpcomingRevisions() {
     const data = getSubjectData(s.key);
     const chapters = CHAPTER_DEFS[s.key] || [];
     chapters.forEach((ch, ci) => {
-      const compDate = data[`ch${ci}_completedDate`];
-      if (!compDate) return;
+      const revisionDate = data[`ch${ci}_revisionStartDate`] || data[`ch${ci}_completedDate`];
+      if (!revisionDate) return;
       REV_DAYS.forEach(day => {
-        const targetDate = addDays(compDate, day);
+        const targetDate = addDays(revisionDate, day);
         if (targetDate >= TODAY && targetDate <= addDays(TODAY, 7) && !data[`ch${ci}_rev_d${day}`]) {
           items.push({ subject: s.name, chapter: ch, day, targetDate });
         }
